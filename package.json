@@ -14,7 +14,8 @@
     "graphql": "^16.10.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "prisma": "^5.22.0"
   },
   "type": "module"
 }
