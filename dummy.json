@@ -1,0 +1,25 @@
+{
+    "Users": [
+      {
+        "id": "1",
+        "name": "Shin",
+        "nickName": "Steven"
+      },
+      {
+        "id": "2",
+        "name": "Hong",
+        "nickName": "Isla"
+      }
+    ],
+    "Sales": [
+      {
+        "id": "1",
+        "address": "Seoul"
+      },
+      {
+        "id": "2",
+        "address": "Busan"
+      }
+    ]
+  }
+  
