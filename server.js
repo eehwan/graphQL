@@ -1,8 +1,7 @@
 import { ApolloServer, gql } from "apollo-server";
-import fs from 'fs';
+import { PrismaClient } from "@prisma/client";
 
-const rawData = fs.readFileSync('./dummy.json'); // JSON 파일 읽기
-const { Users, Sales } = JSON.parse(rawData); // JSON 파싱
+const prisma = new PrismaClient();
 
 const typeDefs = gql`
     type User {
@@ -23,60 +22,69 @@ const typeDefs = gql`
         ping: String!
     }
     type Mutation {
-        postSale(address: String!): Sale!
+        createUser(name: String!, nickName: String): User!
+        deleteUser(id: ID!): Boolean!
+        postSale(address: String!, userId: ID!): Sale!
         deleteSale(id: ID!): Boolean!
     }
-`
+`;
 
 const resolvers = {
     Query: {
-        allUsers() {
-            return Users
+        async allUsers() {
+            return await prisma.user.findMany();
         },
-        user(root, { id }) {
-            return Sales.find((sale) => sale.id === id);
+        async user(_, { id }) {
+            return await prisma.user.findUnique({ where: { id: Number(id) } });
         },
-        allSales() {
-            return Sales
+        async allSales() {
+            return await prisma.sale.findMany({ include: { author: true } });
         },
-        sale(root, { id, address}) {
-            filteredSales = Sales
-            if (id) {
-                filteredSales.find((sale) => sale.id === id);
-            }
-            if (address) {
-                filteredSales.find((sale) => sale.address === address);
-            }
-            return filteredSales
+        async sale(_, { id }) {
+            return await prisma.sale.findUnique({ where: { id: Number(id) }, include: { author: true } });
         },
         ping() {
-            return 'pong';
+            return "pong";
         },
     },
-
+    
     Mutation: {
-        postSale(root, { address }) {
-            const newSale = {
-                id: Sales.length + 1,
-                address
-            }
-            Sales.push(newSale);
-            return newSale;
+        async createUser(_, { name, nickName }) {
+            return await prisma.user.create({
+                data: { name, nickName },
+            });
         },
-        deleteSale(root, { id }) {
-            const index = Sales.findIndex((sale) => sale.id === id);
-            if (index !== -1) {
-                Sales.splice(index, 1);
-                return true
+        async deleteUser(_, { id }) {
+            try {
+                await prisma.user.delete({ where: { id: Number(id) } });
+                return true;
+            } catch (error) {
+                console.error(error);
+                return false;
             }
-            return false
         },
-    }
-}
+        async postSale(_, { address, userId }) {
+            return await prisma.sale.create({
+                data: {
+                    address,
+                    author: { connect: { id: Number(userId) } },
+                },
+                include: { author: true },
+            });
+        },
+        async deleteSale(_, { id }) {
+            try {
+                await prisma.sale.delete({ where: { id: Number(id) } });
+                return true;
+            } catch (error) {
+                console.error(error);
+                return false;
+            }
+        },
+    },
+};
 
 const server = new ApolloServer({ typeDefs, resolvers });
-
-server.listen().then((url) => {
-    console.log(url)
-})
-
+server.listen().then(({ url }) => {
+    console.log(`🚀 Server ready at ${url}`);
+});
